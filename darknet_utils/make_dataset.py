@@ -164,19 +164,32 @@ def make_darknet_dataset(cfg_path, class_groups=None):
                         # ---------- YOUR IMPLEMENTATION HERE ----------- #
                         ###################################################
 
-                        raise Exception('darknet_utils.make_dataset.make_darknet_dataset() not implemented!') # delete me
+                        # raise Exception('darknet_utils.make_dataset.make_darknet_dataset() not implemented!') # delete me
                         
                         # 1) Read the coordinates from the Mudd dataset format (absolute coordinates)
+                        # print(coords)
+                        x_top_left = coords[0][0]
+                        y_top_left = coords[0][1]
                         
+                        x_bottom_right = coords[1][0]
+                        y_bottom_right = coords[1][1]
                         
                         # 2) Find height and width of the object (bounding box)
-                        
+                        bounding_box_width = x_bottom_right - x_top_left
+                        bounding_box_height = y_bottom_right - y_top_left
                         
                         # 3) Find the center of the object  (bounding box)
+                        x_center = x_top_left + (bounding_box_width / 2)
+                        y_center = y_top_left + (bounding_box_height / 2)
+                        x_center = x_center / frame_width
+                        y_center = y_center / frame_height
                         
+                        bounding_box_width = bounding_box_width / frame_width
+                        bounding_box_height = bounding_box_height / frame_height 
                         
                         # 4) Write the object's information into a string coords_string in the Darknet format
-                        
+                        coords_string = f"{x_center} {y_center} {bounding_box_width} {bounding_box_height}\n"
+       
                         
                         ###################################################
                         # ----------- END YOUR IMPLEMENTATION ----------- #
@@ -227,8 +240,80 @@ def inspect_darknet_dataset(dataset_path, tests=3):
     # ---------- YOUR IMPLEMENTATION HERE ----------- #
     ###################################################
 
-    raise Exception('darknet_utils.make_dataset.inspect_darknet_dataset() not implemented!') # delete me
+    # raise Exception('darknet_utils.make_dataset.inspect_darknet_dataset() not implemented!') # delete me
+    images = []
+    for i in os.listdir(dataset_path):
+        if i.endswith('.jpg'):
+            images.append(i)
+    
 
+    if len(images) == 0:
+        print(f"No .jpg found in {(dataset_path)}")
+        return
+
+    num_tests = min(tests, len(images))
+    selected_images = random.sample(images, num_tests)
+
+    names = {'0': 'people', '1': 'vehicle'}
+    colors = {'0': (0, 255, 0),'1': (255, 0, 0)}
+
+    for file in selected_images:
+        image_path = os.path.join(dataset_path, file)
+        label_path = os.path.join(dataset_path, file.replace('.jpg', '.txt'))
+
+        img = cv2.imread(image_path)
+        if img is None:
+            print(f"Could not read image {image_path}")
+            print("Pleas check!!!!!!!!!!!!")
+            continue
+
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        img_h, img_w = img.shape[0], img.shape[1]
+
+        if os.path.exists(label_path):
+            with open(label_path, 'r') as f:
+                labels = f.readlines()
+        else:
+            print("No label path read! Pleases check .data and .cfg")
+            labels = []
+
+        for label in labels:
+            parts = label.strip().split()
+            if len(parts) != 5:
+                continue
+
+            class_id = parts[0]
+            x_center = float(parts[1])
+            y_center = float(parts[2])
+            bounding_box_w = float(parts[3])
+            bounding_box_h = float(parts[4])
+
+            x_center = x_center * img_w
+            y_center = y_center * img_h
+            bounding_box_w = bounding_box_w * img_w
+            bounding_box_h = bounding_box_h * img_h
+
+            x_h = int(x_center - bounding_box_w / 2)
+            y_h = int(y_center - bounding_box_h / 2)
+            x_w = int(x_center + bounding_box_w / 2)
+            y_w = int(y_center + bounding_box_h / 2)
+
+            x_h = max(0, x_h)
+            y_h = max(0, y_h)
+            x_w = min(img_w - 1, x_w)
+            y_w = min(img_h - 1, y_w)
+
+            display_name = names.get(class_id, class_id)
+            color = colors.get(class_id, (255, 255, 0))
+
+            cv2.rectangle(img, (x_h, y_h), (x_w, y_w), color, 2)
+            cv2.putText(img,display_name,(x_h, max(y_h - 5, 0)),cv2.FONT_HERSHEY_SIMPLEX,0.5,color,1)
+
+        plt.figure(figsize=(10, 8))
+        plt.imshow(img)
+        plt.title(file)
+        plt.axis('off')
+        plt.show()
     ###################################################
     # ----------- END YOUR IMPLEMENTATION ----------- #
     ###################################################
