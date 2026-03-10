@@ -261,6 +261,10 @@ def inspect_darknet_dataset(dataset_path, tests=3):
         image_path = os.path.join(dataset_path, file)
         label_path = os.path.join(dataset_path, file.replace('.jpg', '.txt'))
 
+        # print("image path:", image_path)
+        # print("label_path:", label_path)
+
+        
         img = cv2.imread(image_path)
         if img is None:
             print(f"Could not read image {image_path}")
@@ -273,15 +277,23 @@ def inspect_darknet_dataset(dataset_path, tests=3):
         if os.path.exists(label_path):
             with open(label_path, 'r') as f:
                 labels = f.readlines()
+                # for i in range(0,5):
+                #     print(labes[i])
         else:
             print("No label path read! Pleases check .data and .cfg")
             labels = []
 
         for label in labels:
             parts = label.strip().split()
+            # print(parts)
+            
             if len(parts) != 5:
                 continue
 
+
+            # for i in parts:
+            #     print(type(i))
+                
             class_id = parts[0]
             x_center = float(parts[1])
             y_center = float(parts[2])

@@ -46,16 +46,80 @@ def image_inference(image_path, model, conf_thresh, nms_thresh, class_names=None
     # --------------------------- YOUR IMPLEMENTATION HERE ---------------------------- #
     #####################################################################################
 
-    raise Exception('darknet_utils.inference.image_inference() not implemented!') # delete me
+    # raise Exception('darknet_utils.inference.image_inference() not implemented!') # delete me
 
     # 1) Load image
+    image_bgr = cv2.imread(image_path)
+    # print(image_path)
+    
+    if image_bgr is None:
+        raise ValueError(f"No image: {image_path}")
+    image_rgb = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2RGB)
+    image_resized = cv2.resize(image_rgb, (model.width, model.height))
     
     # 2) Forward pass of model with torch_utils.detect()
-    
+    with torch.no_grad():
+        detections = detect(model, image_resized, conf_thresh, nms_thresh)
+        # print(dedtections)
+        
     # 3) Plot detections with plot_boxes_cv2()
+    output = image_resized.copy()
+    h, w = output.shape[:2]
+
+    if len(detections) > 0 and len(detections[0]) > 0:
+        for box in detections[0]:
+            x1 = int(box[0] * w)
+            y1 = int(box[1] * h)
+            x2 = int(box[2] * w)
+            y2 = int(box[3] * h)
+
+            x1 = max(0, min(x1, w - 1))
+            y1 = max(0, min(y1, h - 1))
+            x2 = max(0, min(x2, w - 1))
+            y2 = max(0, min(y2, h - 1))
+
+            if len(box) > 5:
+                cls_conf = float(box[5]) 
+            else:
+                cls_conf = 0
+                
+                
+            if len(box) > 6:
+                cls_id = float(box[6]) 
+            else:
+                cls_id = -1
+                
+
+            if class_names is not None:
+                label = f"{class_names[cls_id]} {cls_conf:.3f}"
+            else:
+                label = f"class {cls_id} {cls_conf:.3f}"
+
+            cv2.rectangle(output, (x1, y1), (x2, y2), (255, 0, 0), 2)
+            (text_w, text_h), baseline = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 1)
+
+            text_x1 = x1
+            text_y1 = max(0, y1 - text_h - baseline - 4)
+            text_x2 = min(w - 1, x1 + text_w + 4)
+            text_y2 = max(0, y1)
+
+            cv2.rectangle(output, (text_x1, text_y1), (text_x2, text_y2), (255, 0, 0), -1)
+            cv2.putText(
+                output,
+                label,
+                (text_x1 + 2, max(text_h + 2, text_y2 - 4)),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.6,
+                (255, 255, 255),
+                1,
+                lineType=cv2.LINE_AA
+            )
+    else:
+        print("Wrong size of detections")
     
     # 4) Display detected image in Jupyter cell
-
+    show_array(output)
+    
     #####################################################################################
     # --------------------------- END YOUR IMPLEMENTATION ----------------------------- #
     #####################################################################################  
@@ -100,8 +164,22 @@ def get_class_names(classes_filename):
     # --------------------------- YOUR IMPLEMENTATION HERE ---------------------------- #
     #####################################################################################
 
-    raise Exception('darknet_utils.inference.get_class_names() not implemented!') # delete me
+    # raise Exception('darknet_utils.inference.get_class_names() not implemented!') # delete me
+    class_names = {}
 
+    with open(classes_filename, 'r') as f:
+        lines=f.readlines()
+
+    for i, line in enumerate(lines):
+        if line != "":
+            name = line.strip()
+            if name != "":
+                class_names[i] = name
+            else:
+                # print(name 
+                pass
+            
+    
     #####################################################################################
     # --------------------------- END YOUR IMPLEMENTATION ----------------------------- #
     #####################################################################################
