@@ -165,20 +165,20 @@ def get_class_names(classes_filename):
     #####################################################################################
 
     # raise Exception('darknet_utils.inference.get_class_names() not implemented!') # delete me
-    class_names = {}
-
     with open(classes_filename, 'r') as f:
-        lines=f.readlines()
+        content = f.read().strip()
 
-    for i, line in enumerate(lines):
-        if line != "":
-            name = line.strip()
-            if name != "":
-                class_names[i] = name
-            else:
-                # print(name 
-                pass
-            
+    raw_class_names = ast.literal_eval(content)
+
+    if 0 in raw_class_names and raw_class_names[0] == '__background__':
+        class_names = {}
+        for k, v in raw_class_names.items():
+            if k == 0:
+                continue
+            class_names[int(k) - 1] = str(v)
+    else:
+        class_names = {int(k): str(v) for k, v in raw_class_names.items()}
+
     
     #####################################################################################
     # --------------------------- END YOUR IMPLEMENTATION ----------------------------- #
