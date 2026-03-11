@@ -208,16 +208,42 @@ def measure_throughput(model, input_shape=(1, 3, 512, 512), warmup_iterations=50
     # --------------------------- YOUR IMPLEMENTATION HERE ---------------------------- #
     #####################################################################################
 
-    raise Exception('darknet_utils.inference.measure_throughput() not implemented!') # delete me
+    # raise Exception('darknet_utils.inference.measure_throughput() not implemented!') # delete me
     
     # 1) Initialize some random input data of size input_shape
+    device = next(model.parameters()).device
+    # model.eval()
     
     # 2) Run the model warmup_iterations times
-    
+    x = torch.randn(input_shape).to(device)
+    with torch.no_grad():
+        for _ in range(warmup_iterations):
+            _ = model(x)
+            if device.type == "cuda":
+                torch.cuda.synchronize()
+                
     # 3) Measure and store the runtime of the model's forward pass for iterations number of iterations. 
-    
+    times = []
+
+    with torch.no_grad():
+        for _ in range(iterations):
+            start = time.time()
+            _ = model(x)
+
+            if device.type == "cuda":
+                torch.cuda.synchronize()
+
+            end = time.time()
+            times.append(end - start)
+
+    avg_time = np.mean(times)
+    throughput = input_shape[0] / avg_time
+                
     # 4) If verbose, print the throughput
-    
+    if verbose:
+        print("Average time:", avg_time)
+        print("Throughput:", throughput)
+
 
     #####################################################################################
     # --------------------------- END YOUR IMPLEMENTATION ----------------------------- #
